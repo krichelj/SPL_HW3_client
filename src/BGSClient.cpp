@@ -16,9 +16,7 @@ int main (int argc, char *argv[]) {
     }
 
     string host = argv[1]; // CLA host
-
-    /*string host = "127.0.0.1"; // local host*/
-    short port = static_cast<short>(atoi(argv[2]));
+    auto port = static_cast<short>(atoi(argv[2])); // CLA port
     
     ConnectionHandler connectionHandler(host, port); // create a new connectionHandler
 
@@ -42,7 +40,7 @@ int main (int argc, char *argv[]) {
     clientToServerEncoder.terminate(); // notify the client to server that it has to terminate also
     conditionVariable.notify_all(); // release the condition variable to allow the client to server thread to close
     clientToServerEncoderThread.join(); // wait until the client to server thread closes
-
+    connectionHandler.close(); // close the connection properly
 
     return 0;
 }

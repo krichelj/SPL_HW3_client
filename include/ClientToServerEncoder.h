@@ -18,7 +18,6 @@ private:
 
 public:
     ClientToServerEncoder(ConnectionHandler* currentConnectionHandler, mutex* logoutMutex, condition_variable* conditionVariable); // constructor
-    virtual ~ClientToServerEncoder(); // destructor
     void operator()(); // thread runner method.
     void shortToBytesAndSend(short number);
     void terminate(); // termination method

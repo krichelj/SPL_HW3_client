@@ -5,10 +5,7 @@ using namespace std;
 
 // constructor
 ClientToServerEncoder::ClientToServerEncoder(ConnectionHandler* currentConnectionHandler, mutex* logoutMutex, condition_variable* conditionVariable):
-currentConnectionHandler(currentConnectionHandler), logoutMutex(logoutMutex), conditionVariable(conditionVariable), shouldTerminate(false){}
-
-// destructor
-ClientToServerEncoder::~ClientToServerEncoder() {
+currentConnectionHandler(currentConnectionHandler), logoutMutex(logoutMutex), conditionVariable(conditionVariable), shouldTerminate(false){
 
 }
 
@@ -22,7 +19,6 @@ void ClientToServerEncoder::operator()() {
         char buffer[inputBufferSize];
         cin.getline(buffer, inputBufferSize); // inputs commands from the user
         string inputLine(buffer); // creates a line from the commands
-        int length = static_cast<int>(inputLine.length());
 
         vector<string> commandFromUser;
         boost::split(commandFromUser,inputLine,boost::is_any_of(" "));
@@ -60,8 +56,54 @@ void ClientToServerEncoder::operator()() {
                 shortToBytesAndSend(numOfUsers); // send the numOfUsers
 
                 // send all the user names
-                for (unsigned int i = 0; i < numOfUsers; i++)
+                for (unsigned int i = 0; i < (unsigned int) numOfUsers; i++)
                     currentConnectionHandler->sendLine(commandFromUser[i + 3]); // send the NumOfUsers
+            }
+        }
+
+        else if (command == "POST"){
+
+            string postContent;
+
+            if(commandFromUser.size() > 1)  // checks that there's content in the post
+                postContent = commandFromUser[1];
+
+            // add all of the post
+            for (unsigned int i = 2; i < commandFromUser.size(); i++)
+                postContent += " " + commandFromUser[i];
+
+            shortToBytesAndSend(5); // send the op code
+            currentConnectionHandler->sendLine(postContent);
+        }
+
+        else if (command == "PM"){
+
+            if (commandFromUser.size() > 1) { //checks if message is not empty
+
+                string content;
+
+                if (commandFromUser.size() > 2)
+                    content = commandFromUser[2];
+
+                for (unsigned int i = 3; i < commandFromUser.size(); i++) {
+                    content += " " + commandFromUser[i];
+                }
+                shortToBytesAndSend(6); // send the op code
+                currentConnectionHandler->sendLine(commandFromUser[1]);
+                currentConnectionHandler->sendLine(content);
+            }
+        }
+
+        else if (command == "USERLIST")
+            shortToBytesAndSend(7); // send the op code
+
+
+        else if (command == "STAT"){
+
+            if (commandFromUser.size() == 2){
+
+                shortToBytesAndSend(8); // send the op code
+                currentConnectionHandler->sendLine(commandFromUser[1]);
             }
         }
     }

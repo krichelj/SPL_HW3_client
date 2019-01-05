@@ -18,7 +18,6 @@ private:
 
 public:
     ServerToClientDecoder(ConnectionHandler* currentConnectionHandler, mutex* logoutMutex, condition_variable* conditionVariable); // constructor
-    virtual ~ServerToClientDecoder(); // destructor
     void operator()(); // thread runner method
     short bytesToShort(char* bytesArr);
     void terminate(); // termination method

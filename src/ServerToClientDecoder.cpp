@@ -5,10 +5,7 @@ using namespace std;
 
 // constructor
 ServerToClientDecoder::ServerToClientDecoder(ConnectionHandler* currentConnectionHandler, mutex* logoutMutex, condition_variable* conditionVariable):
-currentConnectionHandler(currentConnectionHandler), logoutMutex(logoutMutex), conditionVariable(conditionVariable), shouldTerminate(false){}
-
-// destructor
-ServerToClientDecoder::~ServerToClientDecoder() {
+currentConnectionHandler(currentConnectionHandler), logoutMutex(logoutMutex), conditionVariable(conditionVariable), shouldTerminate(false){
 
 }
 
@@ -22,6 +19,27 @@ void ServerToClientDecoder::operator()() {
 
         if (opCode == 9){ // notification
 
+            // get the notification type
+            char typeBytes [1];
+            currentConnectionHandler->getBytes(typeBytes, 1);
+
+            string typeString, postingUser, content;
+
+            if (typeBytes[0] == 48) // 0 char
+                typeString = "PM";
+            else
+                typeString = "Public";
+
+            // get the postingUser
+            currentConnectionHandler->getFrameAscii(postingUser, '\0');
+            postingUser = postingUser.substr(0, postingUser.size()-1);
+
+            // get the content
+            currentConnectionHandler->getFrameAscii(content, '\0');
+            content = content.substr(0, content.size()-1);
+
+            cout << "NOTIFICATION " << typeString << " " << postingUser << " "
+                << content << endl;
 
         }
 
@@ -31,21 +49,52 @@ void ServerToClientDecoder::operator()() {
             currentConnectionHandler->getBytes(ackMessageOpCodeBytes, 2); // get 2 bytes from the server for the message opCode of the ack
             short ackMessageOpCode = bytesToShort(ackMessageOpCodeBytes); // convert the bytes to short
 
+            if (ackMessageOpCode == 3) {
 
-            if (ackMessageOpCode == 1){
-
-                cout << "A user has registered successfully!" << endl;
-            }
-            else if (ackMessageOpCode == 2){
-
-                cout << "A user has logged in successfully!" << endl;
-            }
-            else if (ackMessageOpCode == 3){ // LOGOUT
-
-                cout << "The current user wants to log out! What a nerd!" << endl;
-                terminate();
+                cout << "ACK " << ackMessageOpCode << endl; // print the desired output
+                terminate(); // call to terminate the server to client thread
             }
 
+            else if (ackMessageOpCode == 4 || ackMessageOpCode == 7){ // FollowUnfollowMessage or UserListMessage
+
+                // record the number of users
+                char numOfUsersBytes[2];
+                currentConnectionHandler->getBytes(numOfUsersBytes, 2);
+                short numOfUsers = bytesToShort(numOfUsersBytes);
+
+                string userNamesString;
+
+                for (int i = 0; i< numOfUsers ; i++){
+
+                    string currentName;
+                    currentConnectionHandler->getFrameAscii(currentName, '\0');
+                    userNamesString += " " + currentName.substr(0, currentName.size()-1);
+                }
+
+                cout << "ACK " << ackMessageOpCode << " " << numOfUsers << userNamesString << endl;
+            }
+
+            else if (ackMessageOpCode == 8){ // Stat
+
+                // get the numOfPosts
+                char numBytes[2];
+                currentConnectionHandler->getBytes(numBytes, 2);
+                short numOfPosts = bytesToShort(numBytes);
+
+                // get the numOfFollowers
+                currentConnectionHandler->getBytes(numBytes, 2);
+                short numOfFollowers = bytesToShort(numBytes);
+
+                // get the numOfFollowing
+                currentConnectionHandler->getBytes(numBytes, 2);
+                short numOfFollowing = bytesToShort(numBytes);
+
+                cout << "ACK " << ackMessageOpCode << " " << numOfPosts << " " << numOfFollowers
+                        << " " << numOfFollowing << endl;
+
+            }
+            else
+                cout << "ACK " << ackMessageOpCode << endl;
 
         }
 
@@ -55,28 +104,11 @@ void ServerToClientDecoder::operator()() {
             currentConnectionHandler->getBytes(errorMessageOpCodeBytes, 2); // get 2 bytes from the server for the message opCode of the ack
             short errorMessageOpCode = bytesToShort(errorMessageOpCodeBytes); // convert the bytes to short
 
-            if (errorMessageOpCode == 1){
+            cout << "ERROR " << errorMessageOpCode << endl;
 
-                cout << "The requested user to register is already registered!" << endl;
-            }
-            // in case the user to login is not registered or already logged in or a wrong password was typed in
-            // or the current connection handler of the service already has a user logged in
-            else if (errorMessageOpCode == 2){
-
-                cout << "The requested user to login is not registered or already logged in or a wrong password was typed in" << endl;
-                cout << "or the current connection handler of the service already has a user logged in!" << endl;
-            }
-            else if (errorMessageOpCode == 3){ // LOGOUT
-
-                cout << "The user does not exist or already logged off!" << endl;
-                conditionVariable->notify_all(); // release the keyboard in case the logout got an error
-            }
-
-
-
+            if (errorMessageOpCode == 3)
+                conditionVariable->notify_all();// release the keyboard in case the logout was failed
         }
-
-
     }
 }
 
