@@ -7,10 +7,8 @@ LFLAGS  = -L/usr/lib -lboost_system -pthread
 # All Targets
 all: BGSclient
 
-# Tool invocations
-# Executable "hello" depends on the files hello.o and run.o.
 BGSclient: bin/BGSClient.o bin/ConnectionHandler.o bin/ClientToServerEncoder.o bin/ServerToClientDecoder.o
-	@echo 'Building target: hello'
+	@echo 'Building target: BGSclient'
 	@echo 'Invoking: C++ Linker'
 	$(CC) -o bin/BGSClient bin/BGSClient.o bin/ConnectionHandler.o bin/ClientToServerEncoder.o bin/ServerToClientDecoder.o $(LFLAGS)
 	@echo 'Finished building target: BGSclient'
