@@ -15,6 +15,6 @@ include_directories(bin)
 include_directories(src)
 
 add_executable(Boost_Echo_Client
-        makefile include/ClientToServerEncoder.h include/ConnectionHandler.h include/ServerToClientDecoder.h src/BGSClient.cpp src/ClientToServerEncoder.cpp src/ConnectionHandler.cpp src/ServerToClientDecoder.cpp)
+        makefile include/ClientToServerEncoder.h include/ConnectionHandler.h include/ServerToClientDecoder.h src/BGSclient.cpp src/ClientToServerEncoder.cpp src/ConnectionHandler.cpp src/ServerToClientDecoder.cpp)
 
 target_link_libraries(Boost_Echo_Client ${Boost_LIBRARIES})
